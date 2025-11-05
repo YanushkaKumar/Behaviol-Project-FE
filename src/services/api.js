@@ -192,9 +192,15 @@ export const tasksAPI = {
   },
 
   // Update a task (handles all updates including completion toggle)
-  updateTask: async (taskId, updates) => {
+ updateTask: async (taskId, updates) => {
     try {
       console.log('Updating task:', taskId, 'with updates:', updates);
+      
+      // Convert date-only string to datetime string for backend
+      let dueDate = updates.dueDate;
+      if (dueDate && !dueDate.includes('T')) {
+        dueDate = `${dueDate}T00:00:00`;
+      }
       
       const response = await fetch(`${API_BASE_URL}/todos/${taskId}`, {
         method: 'PUT',
@@ -203,7 +209,7 @@ export const tasksAPI = {
           title: updates.title,
           description: updates.description,
           priority: updates.priority,
-          dueDate: updates.dueDate,
+          dueDate: dueDate,
           tags: updates.tags,
           completed: updates.completed
         }),
