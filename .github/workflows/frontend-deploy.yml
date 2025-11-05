@@ -1,0 +1,52 @@
+name: Deploy React Frontend to GCP VM
+
+on:
+  push:
+    branches:
+      - master   # change to master if your branch is master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install gcloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: compute
+
+      - name: Copy frontend build to VM
+        run: |
+          gcloud compute scp --recurse build/* \
+          ${{ secrets.GCP_VM_NAME }}:~/frontend-temp/ \
+          --zone=${{ secrets.GCP_VM_ZONE }}
+
+      - name: Move files to NGINX directory & restart
+        run: |
+          gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_VM_ZONE }} \
+          --command="
+            sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* &&
+            sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ &&
+            sudo systemctl restart nginx
+          "
