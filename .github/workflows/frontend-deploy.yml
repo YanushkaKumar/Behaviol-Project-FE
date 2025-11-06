@@ -3,7 +3,7 @@ name: Deploy React Frontend to GCP VM
 on:
   push:
     branches:
-      - master   # change to master if your branch is master
+      - master
 
 jobs:
   deploy:
@@ -17,6 +17,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      - name: Create .env.production File from GitHub Secret
+        run: |
+          echo "REACT_APP_API_URL=${{ secrets.FRONTEND_API_URL }}" > .env.production
 
       - name: Install Dependencies
         run: npm install
@@ -45,8 +49,6 @@ jobs:
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
           --zone=${{ secrets.GCP_VM_ZONE }} \
-          --command="
-            sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* &&
-            sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ &&
-            sudo systemctl restart nginx
-          "
+          --command="sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* \
+          && sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ \
+          && sudo systemctl restart nginx"
