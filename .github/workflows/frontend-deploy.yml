@@ -21,6 +21,11 @@ jobs:
         with:
           node-version: '18'
 
+      # ✅ Inject API URL into .env.production from GitHub Secret
+      - name: Create .env.production File
+        run: |
+          echo "REACT_APP_API_URL=${{ secrets.FRONTEND_API_URL }}" > .env.production
+
       - name: Install Dependencies
         run: npm install
 
@@ -41,18 +46,17 @@ jobs:
       - name: Copy frontend build to VM
         run: |
           gcloud compute scp --recurse build/* \
-          ${{ secrets.GCP_VM_NAME }}:~/frontend-temp/ \
-          --zone=${{ secrets.GCP_VM_ZONE }}
+            ${{ secrets.GCP_VM_NAME }}:~/frontend-temp/ \
+            --zone=${{ secrets.GCP_VM_ZONE }}
 
       - name: Move files to NGINX directory & restart
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
-          --zone=${{ secrets.GCP_VM_ZONE }} \
-          --command="
-            sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* &&
-            sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ &&
-            sudo systemctl restart nginx
-          "
+            --zone=${{ secrets.GCP_VM_ZONE }} \
+            --command="sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* \
+            && sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ \
+            && sudo systemctl restart nginx"
+
 
   # ==================== GKE DEPLOYMENT ====================
   deploy-to-gke:
@@ -67,6 +71,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      # ✅ Inject API URL into .env.production
+      - name: Create .env.production File
+        run: |
+          echo "REACT_APP_API_URL=${{ secrets.FRONTEND_API_URL }}" > .env.production
 
       - name: Install Dependencies
         run: npm install
@@ -142,4 +151,3 @@ jobs:
         run: |
           echo "=== Frontend Load Balancer External IP ==="
           kubectl get service todo-frontend-service -n todo-backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-          echo ""
