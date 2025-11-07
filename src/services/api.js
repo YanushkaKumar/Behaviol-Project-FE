@@ -1,6 +1,6 @@
 // src/services/api.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://136.119.94.189:5050/api";
+const API_BASE_URL = "/api";
 
 
 // Helper function to handle API responses
