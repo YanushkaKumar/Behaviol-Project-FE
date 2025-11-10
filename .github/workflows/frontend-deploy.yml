@@ -1,95 +1,110 @@
-name: Deploy React Frontend to GCP
+name: Frontend CI/CD (VM + GKE)
 
 on:
   push:
     branches:
-      - master
-      - gke-release
+      - master        # → Deploy static build to VM (NGINX)
+      - gke-release   # → Build container & deploy to GKE
 
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+  APP_NAME: todo-frontend
+
+# ==================== JOB: DEPLOY TO VM (master) ====================
 jobs:
-  # ==================== VM DEPLOYMENT ====================
   deploy-to-vm:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      # ✅ Inject API URL into .env.production from GitHub Secret
-      - name: Create .env.production File
+      - name: Create .env.production
         run: |
           echo "REACT_APP_API_URL=${{ secrets.FRONTEND_API_URL }}" > .env.production
+          echo ".env.production created"
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install deps
+        run: npm ci
 
-      - name: Build React App (no CI lint blocking)
+      - name: Build (skip CI lint)
         run: CI=false npm run build
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Install gcloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           install_components: compute
 
-      - name: Copy frontend build to VM
+      - name: Copy build to VM
         run: |
+          gcloud compute ssh ${{ secrets.GCP_VM_NAME }} --zone=${{ secrets.GCP_VM_ZONE }} --command="mkdir -p ~/frontend-temp"
           gcloud compute scp --recurse build/* \
             ${{ secrets.GCP_VM_NAME }}:~/frontend-temp/ \
             --zone=${{ secrets.GCP_VM_ZONE }}
 
-      - name: Move files to NGINX directory & restart
+      - name: Move to NGINX dir & restart
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
             --zone=${{ secrets.GCP_VM_ZONE }} \
-            --command="sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* \
-            && sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ \
-            && sudo systemctl restart nginx"
+            --command="sudo mkdir -p /opt/frontend/Behaviol-Project-FE/build && \
+                       sudo rm -rf /opt/frontend/Behaviol-Project-FE/build/* && \
+                       sudo mv ~/frontend-temp/* /opt/frontend/Behaviol-Project-FE/build/ && \
+                       rm -rf ~/frontend-temp && \
+                       sudo systemctl restart nginx"
 
-
-  # ==================== GKE DEPLOYMENT ====================
+# ==================== JOB: DEPLOY TO GKE (gke-release) ====================
   deploy-to-gke:
     if: github.ref == 'refs/heads/gke-release'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      # ✅ Inject API URL into .env.production
-      - name: Create .env.production File
+      - name: Create .env.production
         run: |
           echo "REACT_APP_API_URL=${{ secrets.FRONTEND_API_URL }}" > .env.production
+          echo ".env.production created"
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install deps
+        run: npm ci
 
-      - name: Build React App (no CI lint blocking)
+      - name: Build (skip CI lint)
         run: CI=false npm run build
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Configure gcloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
@@ -97,57 +112,54 @@ jobs:
         run: |
           gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
-      - name: Build Docker Image
+      - name: Build & Tag Docker image
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:${{ github.sha }} .
-          docker tag ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:${{ github.sha }} \
-            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:latest
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/${{ env.APP_NAME }}"
+          docker build -t "${IMAGE}:${{ github.sha }}" .
+          docker tag "${IMAGE}:${{ github.sha }}" "${IMAGE}:latest"
 
-      - name: Push Docker Image to Artifact Registry
+      - name: Push Docker image
         run: |
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:${{ github.sha }}
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:latest
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/${{ env.APP_NAME }}"
+          docker push "${IMAGE}:${{ github.sha }}"
+          docker push "${IMAGE}:latest"
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
-      - name: Install GKE gcloud auth plugin
-        run: |
-          gcloud components install gke-gcloud-auth-plugin --quiet
+      - name: Install GKE auth plugin
+        run: gcloud components install gke-gcloud-auth-plugin --quiet
 
-      - name: Get GKE Credentials
+      - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
             --zone=${{ secrets.GKE_ZONE }} \
             --project=${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Verify kubectl connection
+      - name: Verify cluster
         run: |
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Deploy Frontend to GKE
+      - name: Update Deployment image
         run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/${{ env.APP_NAME }}"
           kubectl set image deployment/todo-frontend \
-            todo-frontend=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO_NAME }}/todo-frontend:${{ github.sha }} \
+            todo-frontend="${IMAGE}:${{ github.sha }}" \
             -n todo-backend
 
-      - name: Wait for Rollout to Complete
-        run: |
-          kubectl rollout status deployment/todo-frontend -n todo-backend
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/todo-frontend -n todo-backend
 
-      - name: Verify Deployment
+      - name: Post-deploy checks
         run: |
-          echo "=== Frontend Pods Status ==="
+          echo "=== Pods ==="
           kubectl get pods -n todo-backend -l app=todo-frontend
-          echo ""
-          echo "=== Frontend Service Status ==="
+          echo "=== Service ==="
           kubectl get svc todo-frontend-service -n todo-backend
-          echo ""
-          echo "=== Frontend Deployment Info ==="
+          echo "=== Deployment describe ==="
           kubectl describe deployment todo-frontend -n todo-backend
 
-      - name: Get Frontend Load Balancer IP
+      - name: Show frontend LB IP (if Service is LoadBalancer)
         run: |
-          echo "=== Frontend Load Balancer External IP ==="
-          kubectl get service todo-frontend-service -n todo-backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+          kubectl get service todo-frontend-service -n todo-backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || true
