@@ -49,11 +49,10 @@ metadata:
   labels:
     app: todo-frontend
 spec:
-  type: LoadBalancer
+  type: ClusterIP        
   selector:
     app: todo-frontend
   ports:
   - protocol: TCP
     port: 80
     targetPort: 80
-  sessionAffinity: ClientIP
