@@ -23,7 +23,7 @@ const getAuthHeaders = () => {
   };
 };
 
-// Helper function to normalize task from backend
+
 const normalizeTask = (task) => ({
   id: task.id || task._id,
   title: task.title || task.text || '',
