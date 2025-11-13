@@ -1,6 +1,6 @@
 // src/services/api.js
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://todoappilication.danushka.tech";
 
 
 // Helper function to handle API responses
