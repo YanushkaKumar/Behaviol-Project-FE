@@ -1,57 +1,58 @@
-/* AuthStyles.css */
+/* AuthStyles.css - Minimalist Clean Design */
 
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  background: #fafafa;
+  padding: 24px;
 }
 
 .auth-card {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e5e7eb;
+  padding: 48px 40px;
   width: 100%;
-  max-width: 450px;
-  animation: slideUp 0.4s ease-out;
+  max-width: 420px;
+  animation: fadeIn 0.3s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(30px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .auth-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a202c;
+  font-size: 28px;
+  font-weight: 600;
+  color: #111827;
   margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
 }
 
 .auth-subtitle {
-  font-size: 16px;
-  color: #718096;
+  font-size: 15px;
+  color: #6b7280;
   margin: 0;
+  font-weight: 400;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .form-group {
@@ -62,73 +63,83 @@
 
 .form-label {
   font-size: 14px;
-  font-weight: 600;
-  color: #2d3748;
+  font-weight: 500;
+  color: #374151;
+  letter-spacing: -0.01em;
 }
 
 .form-input {
   padding: 12px 16px;
-  border: 2px solid #e2e8f0;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.2s;
+  font-size: 15px;
+  transition: all 0.2s ease;
   outline: none;
+  background: #ffffff;
+  color: #111827;
 }
 
 .form-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 .form-input:disabled {
-  background-color: #f7fafc;
+  background-color: #f9fafb;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
 .error-message {
-  background-color: #fed7d7;
-  color: #c53030;
+  background-color: #fef2f2;
+  color: #dc2626;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
-  border-left: 4px solid #fc8181;
+  border: 1px solid #fecaca;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #111827;
   color: white;
-  padding: 14px 24px;
+  padding: 13px 24px;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   margin-top: 8px;
+  letter-spacing: -0.01em;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .auth-footer {
-  margin-top: 24px;
+  margin-top: 28px;
   text-align: center;
 }
 
 .auth-link-text {
-  color: #4a5568;
+  color: #6b7280;
   font-size: 14px;
   margin: 0;
 }
@@ -136,32 +147,35 @@
 .auth-link {
   background: none;
   border: none;
-  color: #667eea;
-  font-weight: 600;
+  color: #2563eb;
+  font-weight: 500;
   cursor: pointer;
   text-decoration: none;
   font-size: 14px;
   padding: 0;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
 .auth-link:hover:not(:disabled) {
-  color: #764ba2;
-  text-decoration: underline;
+  color: #1d4ed8;
 }
 
 .auth-link:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Responsive */
 @media (max-width: 480px) {
   .auth-card {
-    padding: 30px 20px;
+    padding: 32px 24px;
   }
   
   .auth-title {
-    font-size: 28px;
+    font-size: 24px;
+  }
+  
+  .auth-subtitle {
+    font-size: 14px;
   }
 }
