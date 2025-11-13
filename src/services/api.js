@@ -2,7 +2,6 @@
 
 const API_BASE_URL = "https://todoappilication.danushka.tech";
 
-
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json();
@@ -23,7 +22,6 @@ const getAuthHeaders = () => {
   };
 };
 
-
 const normalizeTask = (task) => ({
   id: task.id || task._id,
   title: task.title || task.text || '',
@@ -40,13 +38,13 @@ const normalizeTask = (task) => ({
 export const authAPI = {
   register: async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {   // FIXED
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: userData.name, 
+          username: userData.name,
           password: userData.password
         }),
       });
@@ -85,7 +83,7 @@ export const authAPI = {
       
       console.log('Sending login request with username:', loginData.username);
       
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {   // FIXED
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +135,7 @@ export const tasksAPI = {
   // Get all tasks for the logged-in user
   getTasks: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {   // FIXED
         method: 'GET',
         headers: getAuthHeaders(),
       });
@@ -164,7 +162,7 @@ export const tasksAPI = {
   // Create a new task
   createTask: async (taskData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {   // FIXED
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -176,7 +174,7 @@ export const tasksAPI = {
           completed: false 
         }),
       });
-          
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to create task');
@@ -193,17 +191,16 @@ export const tasksAPI = {
   },
 
   // Update a task (handles all updates including completion toggle)
- updateTask: async (taskId, updates) => {
+  updateTask: async (taskId, updates) => {
     try {
       console.log('Updating task:', taskId, 'with updates:', updates);
       
-      // Convert date-only string to datetime string for backend
       let dueDate = updates.dueDate;
       if (dueDate && !dueDate.includes('T')) {
         dueDate = `${dueDate}T00:00:00`;
       }
       
-      const response = await fetch(`${API_BASE_URL}/todos/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${taskId}`, {   // FIXED
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -231,7 +228,7 @@ export const tasksAPI = {
     }
   },
 
-  // Toggle task completion (uses updateTask)
+  // Toggle task completion
   toggleTask: async (taskId, taskData) => {
     console.log('Toggle task called with:', taskId, taskData);
     return tasksAPI.updateTask(taskId, taskData);
@@ -240,7 +237,7 @@ export const tasksAPI = {
   // Delete a task
   deleteTask: async (taskId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${taskId}`, {   // FIXED
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
