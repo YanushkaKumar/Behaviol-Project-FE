@@ -1,6 +1,6 @@
 // src/services/api.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "/api";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://136.111.136.171";
 
 
 
@@ -41,7 +41,7 @@ const normalizeTask = (task) => ({
 export const authAPI = {
   register: async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export const authAPI = {
       
       console.log('Sending login request with username:', loginData.username);
       
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export const tasksAPI = {
   // Get all tasks for the logged-in user
   getTasks: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
@@ -165,7 +165,7 @@ export const tasksAPI = {
   // Create a new task
   createTask: async (taskData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -204,7 +204,7 @@ export const tasksAPI = {
         dueDate = `${dueDate}T00:00:00`;
       }
       
-      const response = await fetch(`${API_BASE_URL}/todos/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${taskId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -241,7 +241,7 @@ export const tasksAPI = {
   // Delete a task
   deleteTask: async (taskId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/todos/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${taskId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
